@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,15 +9,15 @@ namespace MarketOrderSystem
 {
     public class Marketplace
     {
-        Dictionary<string, SortedList<int, List<MarketOrder>>> _buyOrders;
-        Dictionary<string, SortedList<int, List<MarketOrder>>> _sellOrders;
+        private static readonly ReadOnlyCollection<MarketOrder> _empty = new List<MarketOrder>().AsReadOnly();
+        Dictionary<string, SortedSet<MarketOrder>> _buyOrders;
+        Dictionary<string, SortedSet<MarketOrder>> _sellOrders;
 
         public Marketplace()
         {
-            
-            _buyOrders = new Dictionary<string, SortedList<int, List<MarketOrder>>>();
-            _sellOrders = new Dictionary<string, SortedList<int, List<MarketOrder>>>();
-            
+
+            _buyOrders = new Dictionary<string, SortedSet<MarketOrder>>();
+            _sellOrders = new Dictionary<string, SortedSet<MarketOrder>>();
         }
 
 
@@ -24,14 +25,9 @@ namespace MarketOrderSystem
         {
             if (!_buyOrders.ContainsKey(order.ItemName))
             {
-                _buyOrders.Add(order.ItemName, new SortedList<int, List<MarketOrder>>(Comparer<int>.Create((x, y) => y.CompareTo(x))));
+                _buyOrders.Add(order.ItemName, new SortedSet<MarketOrder>(new BuyOrderComparer()));
             }
-            if (!_buyOrders[order.ItemName].ContainsKey(order.Price))
-            {
-                _buyOrders[order.ItemName].Add(order.Price, new List<MarketOrder>());
-            }
-            _buyOrders[order.ItemName][order.Price].Add(order);
-
+            _buyOrders[order.ItemName].Add(order);
             MatchBuyOrder(order);
         }
 
@@ -41,35 +37,28 @@ namespace MarketOrderSystem
             {
                 return;
             }
-
-            var prices = _sellOrders[buyOrder.ItemName].Keys;
-            for (int i = 0; i < prices.Count; i++)
+            var toRemove = new List<MarketOrder>();
+            foreach (var sellOrder in _sellOrders[buyOrder.ItemName])
             {
-                if (prices[i] <= buyOrder.Price)
+                if (buyOrder.Price >= sellOrder.Price)
                 {
-                    int count = _sellOrders[buyOrder.ItemName][prices[i]].Count;
-                    for (int j = 0; j < count; j++)
+                    int tradeQuantity = Math.Min(buyOrder.Quantity, sellOrder.Quantity);
+                    buyOrder.Quantity -= tradeQuantity;
+                    sellOrder.Quantity -= tradeQuantity;
+                    if (sellOrder.Quantity == 0)
                     {
-                        MarketOrder sellOrder = _sellOrders[buyOrder.ItemName][prices[i]][j];
-                        if (buyOrder.Quantity > 0)
-                        {
-                            int tradeQuantity = Math.Min(buyOrder.Quantity, sellOrder.Quantity);
-                            buyOrder.Quantity -= tradeQuantity;
-                            sellOrder.Quantity -= tradeQuantity;
-
-                            if (sellOrder.Quantity == 0)
-                            {
-                                _sellOrders[buyOrder.ItemName][prices[i]].Remove(sellOrder);
-                            }
-                            if (buyOrder.Quantity == 0)
-                            {
-                                _buyOrders[buyOrder.ItemName][buyOrder.Price].Remove(buyOrder);
-                            }
-                        }
-                        else return;
+                        toRemove.Add(sellOrder);
+                    }
+                    if (buyOrder.Quantity == 0)
+                    {
+                        _buyOrders[buyOrder.ItemName].Remove(buyOrder);
+                        break;
                     }
                 }
-                else break;
+            }
+            foreach (var filledOrder in toRemove)
+            {
+                _sellOrders[buyOrder.ItemName].Remove(filledOrder);
             }
         }
 
@@ -77,13 +66,9 @@ namespace MarketOrderSystem
         {
             if (!_sellOrders.ContainsKey(order.ItemName))
             {
-                _sellOrders.Add(order.ItemName, new SortedList<int, List<MarketOrder>>(Comparer<int>.Create((x, y) => x.CompareTo(y))));
+                _sellOrders.Add(order.ItemName, new SortedSet<MarketOrder>(new SellOrderComparer()));
             }
-            if (!_sellOrders[order.ItemName].ContainsKey(order.Price))
-            {
-                _sellOrders[order.ItemName].Add(order.Price, new List<MarketOrder>());
-            }
-            _sellOrders[order.ItemName][order.Price].Add(order);
+            _sellOrders[order.ItemName].Add(order);
             MatchSellOrder(order);
         }
 
@@ -93,61 +78,48 @@ namespace MarketOrderSystem
             {
                 return;
             }
-
-            var prices = _buyOrders[sellOrder.ItemName].Keys;
-            for (int i = 0; i < prices.Count; i++)
+            var toRemove = new List<MarketOrder>();
+            foreach (var buyOrder in _buyOrders[sellOrder.ItemName])
             {
-                if (prices[i] >= sellOrder.Price)
+                if (sellOrder.Price <= buyOrder.Price)
                 {
-                    int count = _buyOrders[sellOrder.ItemName][prices[i]].Count;
-                    for (int j = 0; j < count; j++)
+                    int tradeQuantity = Math.Min(sellOrder.Quantity, buyOrder.Quantity);
+                    sellOrder.Quantity -= tradeQuantity;
+                    buyOrder.Quantity -= tradeQuantity;
+                    if (buyOrder.Quantity == 0)
                     {
-                        MarketOrder buyOrder = _buyOrders[sellOrder.ItemName][prices[i]][j];
-                        if (sellOrder.Quantity > 0)
-                        {
-                            int tradeQuantity = Math.Min(sellOrder.Quantity, buyOrder.Quantity);
-                            sellOrder.Quantity -= tradeQuantity;
-                            buyOrder.Quantity -= tradeQuantity;
-
-                            if (buyOrder.Quantity == 0)
-                            {
-                                _buyOrders[sellOrder.ItemName][prices[i]].Remove(buyOrder);
-                            }
-                            if (sellOrder.Quantity == 0)
-                            {
-                                _sellOrders[sellOrder.ItemName][sellOrder.Price].Remove(sellOrder);
-                            }
-                        }
-                        else return;
+                        toRemove.Add(buyOrder);
+                    }
+                    if (sellOrder.Quantity == 0)
+                    {
+                        _sellOrders[sellOrder.ItemName].Remove(sellOrder);
+                        break;
                     }
                 }
-                else break;
+            }
+            foreach (var filledOrder in toRemove)
+            {
+                _buyOrders[sellOrder.ItemName].Remove(filledOrder);
             }
         }
 
         public IReadOnlyCollection<MarketOrder> GetBuyOrders(string item)
         {
-            List<MarketOrder> results = new List<MarketOrder>();
             if (_buyOrders.ContainsKey(item))
             {
-                foreach (List<MarketOrder> orders in _buyOrders[item].Values)
-                {
-                    results.AddRange(orders);
-                }
+                return _buyOrders[item];
+
             }
-            return results;
+            else return _empty;
         }
         public IReadOnlyCollection<MarketOrder> GetSellOrders(string item)
         {
-            List<MarketOrder> results = new List<MarketOrder>();
             if (_sellOrders.ContainsKey(item))
             {
-                foreach (List<MarketOrder> orders in _sellOrders[item].Values)
-                {
-                    results.AddRange(orders);
-                }
+                return _sellOrders[item];
+
             }
-            return results;
+            else return _empty;
         }
     }
 }

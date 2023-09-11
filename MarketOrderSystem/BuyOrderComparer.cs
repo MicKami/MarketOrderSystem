@@ -10,7 +10,7 @@ namespace MarketOrderSystem
     {
         public int Compare(MarketOrder? x, MarketOrder? y)
         {
-            if(x == null || y == null) return 0;
+            if (x == null || y == null) return 0;
             if (x.Price.CompareTo(y.Price) == 0)
             {
                 return x.Timestamp.CompareTo(y.Timestamp);
