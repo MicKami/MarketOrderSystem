@@ -6,19 +6,18 @@ using System.Threading.Tasks;
 
 namespace MarketOrderSystem
 {
-    public class MarketOrder
+    public readonly struct MarketOrder
     {
-        public string ItemName { get; set; }
-        public int Quantity { get; set; }
-        public int Price { get; set; }
-        public readonly ulong Timestamp;
-
-        public MarketOrder(string itemName, int quantity, int price)
+        public MarketOrderType OrderType { get; }
+        public string ItemName { get; }
+        public int Quantity { get; }
+        public int Price { get; }
+        public MarketOrder(MarketOrderType orderType, string itemName, int quantity, int price)
         {
+            OrderType = orderType;
             ItemName = itemName;
             Quantity = quantity;
             Price = price;
-            Timestamp = (ulong)(DateTime.Now.Ticks - new DateTime(2000, 1, 1).Ticks);
         }
     }
 }

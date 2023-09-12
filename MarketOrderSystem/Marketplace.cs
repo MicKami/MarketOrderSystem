@@ -21,11 +21,12 @@ namespace MarketOrderSystem
         }
 
 
-        public void AddBuyOrder(MarketOrder order)
+        public void AddBuyOrder(MarketOrderSystem.MarketOrder buyOrder)
         {
+            MarketOrder order = new MarketOrder(buyOrder);
             if (!_buyOrders.ContainsKey(order.ItemName))
             {
-                _buyOrders.Add(order.ItemName, new SortedSet<MarketOrder>(new BuyOrderComparer()));
+                _buyOrders.Add(order.ItemName, new SortedSet<MarketOrder>(new MarketOrder.BuyOrderComparer()));
             }
             _buyOrders[order.ItemName].Add(order);
             MatchBuyOrder(order);
@@ -40,11 +41,11 @@ namespace MarketOrderSystem
             var toRemove = new List<MarketOrder>();
             foreach (var sellOrder in _sellOrders[buyOrder.ItemName])
             {
-                if (buyOrder.Price >= sellOrder.Price)
+                if (sellOrder.Price <= buyOrder.Price)
                 {
                     int tradeQuantity = Math.Min(buyOrder.Quantity, sellOrder.Quantity);
-                    buyOrder.Quantity -= tradeQuantity;
-                    sellOrder.Quantity -= tradeQuantity;
+                    sellOrder.FillOrder(tradeQuantity);
+                    buyOrder.FillOrder(tradeQuantity);
                     if (sellOrder.Quantity == 0)
                     {
                         toRemove.Add(sellOrder);
@@ -62,11 +63,12 @@ namespace MarketOrderSystem
             }
         }
 
-        public void AddSellOrder(MarketOrder order)
+        public void AddSellOrder(MarketOrderSystem.MarketOrder sellOrder)   
         {
+            MarketOrder order = new MarketOrder(sellOrder);
             if (!_sellOrders.ContainsKey(order.ItemName))
             {
-                _sellOrders.Add(order.ItemName, new SortedSet<MarketOrder>(new SellOrderComparer()));
+                _sellOrders.Add(order.ItemName, new SortedSet<MarketOrder>(new MarketOrder.SellOrderComparer()));
             }
             _sellOrders[order.ItemName].Add(order);
             MatchSellOrder(order);
@@ -84,8 +86,8 @@ namespace MarketOrderSystem
                 if (sellOrder.Price <= buyOrder.Price)
                 {
                     int tradeQuantity = Math.Min(sellOrder.Quantity, buyOrder.Quantity);
-                    sellOrder.Quantity -= tradeQuantity;
-                    buyOrder.Quantity -= tradeQuantity;
+                    sellOrder.FillOrder(tradeQuantity);
+                    buyOrder.FillOrder(tradeQuantity);
                     if (buyOrder.Quantity == 0)
                     {
                         toRemove.Add(buyOrder);
@@ -103,23 +105,60 @@ namespace MarketOrderSystem
             }
         }
 
-        public IReadOnlyCollection<MarketOrder> GetBuyOrders(string item)
+        private class MarketOrder
         {
-            if (_buyOrders.ContainsKey(item))
-            {
-                return _buyOrders[item];
+            public MarketOrderType OrderType { get; }
+            public string ItemName { get; }
+            public int Quantity { get; private set; }
+            public int Price { get; }
+            public ulong Timestamp { get; }
 
-            }
-            else return _empty;
-        }
-        public IReadOnlyCollection<MarketOrder> GetSellOrders(string item)
-        {
-            if (_sellOrders.ContainsKey(item))
-            {
-                return _sellOrders[item];
 
+            public MarketOrder(MarketOrderType orderType, string itemName, int quantity, int price)
+            {
+                OrderType = orderType;
+                ItemName = itemName;
+                Quantity = quantity;
+                Price = price;
+                Timestamp = (ulong)(DateTime.Now.Ticks - new DateTime(2000, 1, 1).Ticks);
             }
-            else return _empty;
+            public MarketOrder(MarketOrderSystem.MarketOrder order) : this(order.OrderType, order.ItemName, order.Quantity, order.Price) { }
+
+            public void FillOrder(int quantity)
+            {
+                Quantity -= quantity;
+            }
+            public class SellOrderComparer : IComparer<MarketOrder>
+            {
+                public int Compare(MarketOrder? x, MarketOrder? y)
+                {
+                    if (x == null || y == null) return 0;
+                    if (x.Price.CompareTo(y.Price) == 0)
+                    {
+                        return x.Timestamp.CompareTo(y.Timestamp);
+                    }
+                    else
+                    {
+                        return x.Price.CompareTo(y.Price);
+                    }
+                }
+            }
+            public class BuyOrderComparer : IComparer<MarketOrder>
+            {
+                public int Compare(MarketOrder? x, MarketOrder? y)
+                {
+                    if (x == null || y == null) return 0;
+                    if (x.Price.CompareTo(y.Price) == 0)
+                    {
+                        return x.Timestamp.CompareTo(y.Timestamp);
+                    }
+                    else
+                    {
+                        return y.Price.CompareTo(x.Price);
+                    }
+                }
+            }
+
         }
     }
 }
