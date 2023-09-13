@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,10 +9,11 @@ namespace MarketOrderSystem
 {
     public readonly struct MarketOrder
     {
-        public MarketOrderType OrderType { get; }
-        public string ItemName { get; }
-        public int Quantity { get; }
-        public int Price { get; }
+        public required MarketOrderType OrderType { get; init; }
+        public required string ItemName { get; init; }
+        public required int Quantity { get; init; }
+        public required int Price { get; init; }
+        [SetsRequiredMembers]
         public MarketOrder(MarketOrderType orderType, string itemName, int quantity, int price)
         {
             OrderType = orderType;
