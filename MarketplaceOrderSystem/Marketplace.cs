@@ -44,12 +44,16 @@ namespace MarketplaceOrderSystem
             var toRemove = new List<MarketOrder>();
             foreach (var oppositeOrder in oppositeOrderBook[order.ItemName])
             {
-                if (oppositeOrder.Price <= order.Price)
+                var buyOrder = order.OrderType == MarketOrderType.Buy ? order : oppositeOrder;
+                var sellOrder = order.OrderType == MarketOrderType.Sell ? order : oppositeOrder;
+                if (sellOrder.Price <= buyOrder.Price)
                 {
                     int tradeQuantity = Math.Min(order.Quantity, oppositeOrder.Quantity);
                     int transactionPrice = oppositeOrder.Price;
-                    FillOrder(oppositeOrder, tradeQuantity);
-                    order.Quantity -= tradeQuantity;
+
+                    FillSellOrder(sellOrder, tradeQuantity, transactionPrice);
+                    FillBuyOrder(buyOrder, tradeQuantity);
+
                     if (oppositeOrder.Quantity == 0)
                     {
                         toRemove.Add(oppositeOrder);
@@ -57,6 +61,7 @@ namespace MarketplaceOrderSystem
                     if (order.Quantity == 0)
                     {
                         orderBook[order.ItemName].Remove(order);
+                        if (orderBook[order.ItemName].Count == 0) orderBook.Remove(order.ItemName);
                         break;
                     }
                 }
@@ -68,14 +73,16 @@ namespace MarketplaceOrderSystem
             if (oppositeOrderBook[order.ItemName].Count == 0) oppositeOrderBook.Remove(order.ItemName);
         }
 
-        private void FillOrder(MarketOrder order, int tradeQuantity)
+        private void FillBuyOrder(MarketOrder buyOrder, int tradeQuantity)
         {
-            order.Quantity -= tradeQuantity;
-            if(order.OrderType == MarketOrderType.Buy)
-            {
-                order.Owner.AddToInventory(order.ItemName, tradeQuantity);
-            }
-            else order.Owner.AddMoney(tradeQuantity * order.Price);
+            buyOrder.Quantity -= tradeQuantity;
+            buyOrder.Owner.AddToInventory(buyOrder.ItemName, tradeQuantity);
+        }
+
+        private void FillSellOrder(MarketOrder sellOrder, int tradeQuantity, int transactionPrice)
+        {
+            sellOrder.Quantity -= tradeQuantity;
+            sellOrder.Owner.AddMoney(transactionPrice * tradeQuantity);
         }
 
         //        public void AddBuyOrder(MarketplaceOrderSystem.Market
@@ -191,7 +198,7 @@ namespace MarketplaceOrderSystem
             return orders;
         }
 
-        internal class MarketOrder
+        private class MarketOrder
         {
             public MarketOrderType OrderType { get; }
             public string ItemName { get; }
@@ -199,6 +206,7 @@ namespace MarketplaceOrderSystem
             public int Price { get; }
             public MarketPlayer Owner { get; }
             public long Timestamp { get; }
+            
             public MarketOrder(MarketOrderType orderType, string itemName, int quantity, int price, MarketPlayer player)
             {
                 OrderType = orderType;
