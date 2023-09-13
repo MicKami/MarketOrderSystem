@@ -8,9 +8,14 @@ namespace MarketplaceOrderSystem
 {
     public class MarketPlayer
     {
+        private Dictionary<long, MarketOrder> _orders = new Dictionary<long, MarketOrder>();
         private Dictionary<string, int> _inventory = new Dictionary<string, int>();
         private int _currency;
         public string Name { get; init; }
+        public MarketPlayer(string name)
+        {
+            Name = name;
+        }
         public void AddToInventory(string item, int quantity)
         {
             if (quantity > 0)
@@ -40,16 +45,16 @@ namespace MarketplaceOrderSystem
             }
             return false;
         }
+        public int GetMoney()
+        {
+            return _currency;
+        }
         public void AddMoney(int amount)
         {
             if (amount > 0)
             {
                 _currency += amount;
             }
-        }
-        public int GetMoney()
-        {
-            return _currency;
         }
         public bool SubtractMoney(int amount)
         {
@@ -63,12 +68,6 @@ namespace MarketplaceOrderSystem
             }
             return false;
         }
-
-        public MarketPlayer(string name)
-        {
-            Name = name;
-        }
-
         public List<(string itemName, int quantity)> GetInventory()
         {
             List<(string itemName, int quantity)> inventory = new List<(string itemName, int quantity)>();
@@ -78,6 +77,43 @@ namespace MarketplaceOrderSystem
             }
             return inventory;
         }
+        public List<MarketOrder> GetOrders()
+        {
+            return _orders.Values.ToList();
+        }
+        public bool IsOrderValid(MarketOrder order)
+        {
+            if (order.Quantity < 0 || order.Price < 0)
+            {
+                return false;
+            }
+            if (order.OrderType == MarketOrderType.Sell)
+            {
+                return (_inventory.ContainsKey(order.ItemName) && _inventory[order.ItemName] >= order.Quantity);
+            }
+            else return order.Quantity * order.Price <= _currency;
+        }
+        public bool PlaceOrder(MarketOrder order, Marketplace market)
+        {
+            if (ProcessOrder(order))
+            {
+                var orderID = market.PlaceOrder(order, this);
+                _orders.Add(orderID, order);
+                return true;
+            }
+            return false;
+        }
+
+        public bool CancelOrder(int enumerationID, Marketplace market)
+        {
+            if(enumerationID <= _orders.Count) 
+            {
+                market.CancelOrder(_orders.Keys.ToArray()[enumerationID]);
+                return true;
+            }
+            return false;
+        }
+
         private bool ProcessOrder(MarketOrder order)
         {
             if (order.OrderType == MarketOrderType.Sell)
@@ -96,27 +132,9 @@ namespace MarketplaceOrderSystem
             }
             return false;
         }
-
-        public bool IsOrderValid(MarketOrder order)
+        internal void FillOrder(long orderID)
         {
-            if (order.Quantity < 0 || order.Price < 0)
-            {
-                return false;
-            }
-            if (order.OrderType == MarketOrderType.Sell)
-            {
-                return (_inventory.ContainsKey(order.ItemName) && _inventory[order.ItemName] >= order.Quantity);
-            }
-            else return order.Quantity * order.Price <= _currency;
-        }
-        public bool PlaceOrder(MarketOrder order, Marketplace market)
-        {
-            if (ProcessOrder(order))
-            {
-                market.PlaceOrder(order, this);
-                return true;
-            }
-            return false;
+            _orders.Remove(orderID);
         }
 
     }

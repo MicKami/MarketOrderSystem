@@ -10,17 +10,12 @@ namespace MarketplaceOrderSystem
 {
     public class Marketplace
     {
-        Dictionary<string, SortedSet<MarketOrder>> _buyOrders;
-        Dictionary<string, SortedSet<MarketOrder>> _sellOrders;
+        Dictionary<string, SortedSet<MarketOrder>> _buyOrders = new();
+        Dictionary<string, SortedSet<MarketOrder>> _sellOrders = new();
+        Dictionary<long, MarketOrder> _allOrders = new();
 
-        public Marketplace()
-        {
 
-            _buyOrders = new Dictionary<string, SortedSet<MarketOrder>>();
-            _sellOrders = new Dictionary<string, SortedSet<MarketOrder>>();
-        }
-
-        internal void PlaceOrder(MarketplaceOrderSystem.MarketOrder order, MarketPlayer player)
+        internal long PlaceOrder(MarketplaceOrderSystem.MarketOrder order, MarketPlayer player)
         {
             MarketOrder _order = new MarketOrder(order, player);
             var orderBook = _order.OrderType == MarketOrderType.Buy ? _buyOrders : _sellOrders;
@@ -31,6 +26,8 @@ namespace MarketplaceOrderSystem
             }
             orderBook[_order.ItemName].Add(_order);
             MatchOrder(_order);
+            _allOrders.Add(_order.ID, _order);
+            return _order.ID;
         }
         private void MatchOrder(MarketOrder order)
         {
@@ -61,7 +58,11 @@ namespace MarketplaceOrderSystem
                     if (order.Quantity == 0)
                     {
                         orderBook[order.ItemName].Remove(order);
-                        if (orderBook[order.ItemName].Count == 0) orderBook.Remove(order.ItemName);
+                        if (orderBook[order.ItemName].Count == 0)
+                        {
+                            orderBook.Remove(order.ItemName);
+                            _allOrders.Remove(order.ID);
+                        }
                         break;
                     }
                 }
@@ -69,20 +70,47 @@ namespace MarketplaceOrderSystem
             foreach (var filledOrder in toRemove)
             {
                 oppositeOrderBook[order.ItemName].Remove(filledOrder);
+                _allOrders.Remove(filledOrder.ID);
             }
-            if (oppositeOrderBook[order.ItemName].Count == 0) oppositeOrderBook.Remove(order.ItemName);
+            if (oppositeOrderBook[order.ItemName].Count == 0)
+            {
+                oppositeOrderBook.Remove(order.ItemName);
+            }
+        }
+
+        internal void CancelOrder(long orderID)
+        {
+            var order = _allOrders[orderID];
+            if(order.OrderType == MarketOrderType.Buy)
+            {
+                order.Owner.AddMoney(order.Price * order.Quantity);
+                order.Owner.FillOrder(orderID);
+                _allOrders.Remove(orderID);
+                _buyOrders[order.ItemName].Remove(order);
+                if (_buyOrders[order.ItemName].Count == 0) _buyOrders.Remove(order.ItemName);
+            }
+            else
+            {
+                order.Owner.AddToInventory(order.ItemName, order.Quantity);
+                order.Owner.FillOrder(orderID);
+                _allOrders.Remove(orderID);
+                _sellOrders[order.ItemName].Remove(order);
+                if (_sellOrders[order.ItemName].Count == 0) _sellOrders.Remove(order.ItemName);
+            }
         }
 
         private void FillBuyOrder(MarketOrder buyOrder, int tradeQuantity)
         {
             buyOrder.Quantity -= tradeQuantity;
             buyOrder.Owner.AddToInventory(buyOrder.ItemName, tradeQuantity);
+            buyOrder.Owner.FillOrder(buyOrder.ID);
         }
 
         private void FillSellOrder(MarketOrder sellOrder, int tradeQuantity, int transactionPrice)
         {
             sellOrder.Quantity -= tradeQuantity;
             sellOrder.Owner.AddMoney(transactionPrice * tradeQuantity);
+            sellOrder.Owner.FillOrder(sellOrder.ID);
         }
 
         //        public void AddBuyOrder(MarketplaceOrderSystem.Market
@@ -206,7 +234,8 @@ namespace MarketplaceOrderSystem
             public int Price { get; }
             public MarketPlayer Owner { get; }
             public long Timestamp { get; }
-            
+            public long ID { get; }
+
             public MarketOrder(MarketOrderType orderType, string itemName, int quantity, int price, MarketPlayer player)
             {
                 OrderType = orderType;
@@ -215,6 +244,7 @@ namespace MarketplaceOrderSystem
                 Price = price;
                 Owner = player;
                 Timestamp = DateTime.Now.Ticks;
+                ID = Generate.ID();
             }
             public MarketOrder(MarketplaceOrderSystem.MarketOrder order, MarketPlayer player) : this(order.OrderType, order.ItemName, order.Quantity, order.Price, player) { }
             public class SellOrderComparer : IComparer<MarketOrder>
