@@ -15,7 +15,7 @@ namespace MarketplaceOrderSystem
         Dictionary<long, MarketOrder> _allOrders = new();
 
 
-        internal long PlaceOrder(MarketplaceOrderSystem.MarketOrder order, MarketPlayer player)
+        internal void PlaceOrder(MarketplaceOrderSystem.MarketOrder order, MarketPlayer player)
         {
             MarketOrder _order = new MarketOrder(order, player);
             var orderBook = _order.OrderType == MarketOrderType.Buy ? _buyOrders : _sellOrders;
@@ -27,7 +27,8 @@ namespace MarketplaceOrderSystem
             orderBook[_order.ItemName].Add(_order);
             MatchOrder(_order);
             _allOrders.Add(_order.ID, _order);
-            return _order.ID;
+            player.RegisterOrder(_order.ID, order);
+            MatchOrder(_order);
         }
         private void MatchOrder(MarketOrder order)
         {
@@ -243,7 +244,7 @@ namespace MarketplaceOrderSystem
                 Quantity = quantity;
                 Price = price;
                 Owner = player;
-                Timestamp = DateTime.Now.Ticks;
+                Timestamp = DateTime.UtcNow.Ticks;
                 ID = Generate.ID();
             }
             public MarketOrder(MarketplaceOrderSystem.MarketOrder order, MarketPlayer player) : this(order.OrderType, order.ItemName, order.Quantity, order.Price, player) { }

@@ -97,7 +97,7 @@ namespace MarketplaceOrderSystem
         {
             if (ProcessOrder(order))
             {
-                var orderID = market.PlaceOrder(order, this);
+                market.PlaceOrder(order, this);
                 _orders.Add(orderID, order);
                 return true;
             }
@@ -131,6 +131,10 @@ namespace MarketplaceOrderSystem
                 }
             }
             return false;
+        }
+        internal void RegisterOrder(long orderID, MarketOrder order)
+        {
+            _orders[orderID] = order;
         }
         internal void FillOrder(long orderID)
         {
