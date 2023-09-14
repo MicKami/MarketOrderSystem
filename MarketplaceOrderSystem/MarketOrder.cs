@@ -5,9 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MarketOrderSystem
+namespace MarketplaceOrderSystem
 {
-    public readonly struct MarketOrder
+    public struct MarketOrder
     {
         public required MarketOrderType OrderType { get; init; }
         public required string ItemName { get; init; }

@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.34024.191
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarketOrderSystem", "MarketOrderSystem\MarketOrderSystem.csproj", "{0736EE02-7074-47E8-B699-B228FF18193B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MarketOrderSystem", "MarketOrderSystem\MarketOrderSystem.csproj", "{0736EE02-7074-47E8-B699-B228FF18193B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarketplaceOrderSystem", "MarketplaceOrderSystem\MarketplaceOrderSystem.csproj", "{AAC01C7D-5B3F-4EC3-A629-99CE8C6E5430}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{0736EE02-7074-47E8-B699-B228FF18193B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0736EE02-7074-47E8-B699-B228FF18193B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0736EE02-7074-47E8-B699-B228FF18193B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AAC01C7D-5B3F-4EC3-A629-99CE8C6E5430}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AAC01C7D-5B3F-4EC3-A629-99CE8C6E5430}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AAC01C7D-5B3F-4EC3-A629-99CE8C6E5430}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AAC01C7D-5B3F-4EC3-A629-99CE8C6E5430}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
