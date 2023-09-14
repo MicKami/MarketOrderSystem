@@ -1,19 +1,11 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace MarketplaceOrderSystem
+﻿namespace MarketplaceOrderSystem
 {
     public class Marketplace
     {
         Dictionary<string, SortedSet<MarketOrder>> _buyOrders = new();
         Dictionary<string, SortedSet<MarketOrder>> _sellOrders = new();
         Dictionary<long, MarketOrder> _allOrders = new();
-        public event Action<OrderFilledEventArgs>? OnOrderFilled;
+        public event Action<MarketTranscationEventArgs>? OnTranscactionComplete;
 
         internal void PlaceOrder(MarketplaceOrderSystem.MarketOrder order, MarketPlayer player)
         {
@@ -51,6 +43,7 @@ namespace MarketplaceOrderSystem
 
                     FillSellOrder(sellOrder, tradeQuantity, transactionPrice);
                     FillBuyOrder(buyOrder, tradeQuantity, transactionPrice);
+                    OnTranscactionComplete?.Invoke(new MarketTranscationEventArgs(buyOrder.Owner, sellOrder.Owner, order.ItemName, tradeQuantity, transactionPrice));
                     if (oppositeOrder.Quantity == 0)
                     {
                         toRemove.Add(oppositeOrder);
