@@ -9,16 +9,20 @@ class Program
 
 
         MarketPlayer player1 = new MarketPlayer("Player1");
-        player1.AddToInventory("wood", 100);
+        player1.AddToInventory("wood", 400);
 
         MarketPlayer player2 = new MarketPlayer("Player2");
         player2.AddMoney(10000);
 
         player1.PlaceOrder(new MarketOrder { ItemName = "wood", OrderType = MarketOrderType.Sell, Price = 20, Quantity = 100 }, market);
-        player2.PlaceOrder(new MarketOrder { ItemName = "wood", OrderType = MarketOrderType.Buy, Price = 25, Quantity = 100 }, market);
+        player1.PlaceOrder(new MarketOrder { ItemName = "wood", OrderType = MarketOrderType.Sell, Price = 21, Quantity = 100 }, market);
+        player1.PlaceOrder(new MarketOrder { ItemName = "wood", OrderType = MarketOrderType.Sell, Price = 24, Quantity = 100 }, market);
+        player1.PlaceOrder(new MarketOrder { ItemName = "wood", OrderType = MarketOrderType.Sell, Price = 25, Quantity = 100 }, market);
+        player2.PlaceOrder(new MarketOrder { ItemName = "wood", OrderType = MarketOrderType.Buy, Price = 25, Quantity = 400 }, market);
 
 
-
+        DisplayPlayerInventory(player1);
+        DisplayPlayerInventory(player2);
 
         Console.Read();
 
@@ -61,7 +65,7 @@ class Program
         }
     private static void Market_OnOrderFilled(MarketTranscationEventArgs args)
     {
-        Console.WriteLine($"{args.Buyer.Name} bought x{args.Quantity} {args.Item} at a price of {args.Price} from {args.Seller.Name}");
+        Console.WriteLine($"{args.Buyer.Name} bought x{args.Quantity} {args.Item} at a price of {args.Price} (Total: {args.Quantity * args.Price}) from {args.Seller.Name}");
     }
 }
 
