@@ -13,7 +13,7 @@ namespace MarketplaceOrderSystem
         Dictionary<string, SortedSet<MarketOrder>> _buyOrders = new();
         Dictionary<string, SortedSet<MarketOrder>> _sellOrders = new();
         Dictionary<long, MarketOrder> _allOrders = new();
-
+        public event Action<OrderFilledEventArgs>? OnOrderFilled;
 
         internal void PlaceOrder(MarketplaceOrderSystem.MarketOrder order, MarketPlayer player)
         {
