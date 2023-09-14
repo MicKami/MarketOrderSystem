@@ -25,7 +25,6 @@ namespace MarketplaceOrderSystem
                 orderBook.Add(_order.ItemName, new SortedSet<MarketOrder>(comparer));
             }
             orderBook[_order.ItemName].Add(_order);
-            MatchOrder(_order);
             _allOrders.Add(_order.ID, _order);
             player.RegisterOrder(_order.ID, order);
             MatchOrder(_order);
@@ -50,8 +49,7 @@ namespace MarketplaceOrderSystem
                     int transactionPrice = oppositeOrder.Price;
 
                     FillSellOrder(sellOrder, tradeQuantity, transactionPrice);
-                    FillBuyOrder(buyOrder, tradeQuantity);
-
+                    FillBuyOrder(buyOrder, tradeQuantity, transactionPrice);
                     if (oppositeOrder.Quantity == 0)
                     {
                         toRemove.Add(oppositeOrder);
@@ -100,10 +98,11 @@ namespace MarketplaceOrderSystem
             }
         }
 
-        private void FillBuyOrder(MarketOrder buyOrder, int tradeQuantity)
+        private void FillBuyOrder(MarketOrder buyOrder, int tradeQuantity, int transactionPrice)
         {
             buyOrder.Quantity -= tradeQuantity;
             buyOrder.Owner.AddToInventory(buyOrder.ItemName, tradeQuantity);
+            buyOrder.Owner.AddMoney((buyOrder.Price - transactionPrice) * tradeQuantity);
             buyOrder.Owner.FillOrder(buyOrder.ID);
         }
 

@@ -98,7 +98,6 @@ namespace MarketplaceOrderSystem
             if (ProcessOrder(order))
             {
                 market.PlaceOrder(order, this);
-                _orders.Add(orderID, order);
                 return true;
             }
             return false;
