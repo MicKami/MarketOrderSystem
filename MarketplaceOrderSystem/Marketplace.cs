@@ -29,6 +29,7 @@ namespace MarketplaceOrderSystem
             player.RegisterOrder(_order.ID, order);
             MatchOrder(_order);
         }
+
         private void MatchOrder(MarketOrder order)
         {
             var orderBook = order.OrderType == MarketOrderType.Buy ? _buyOrders : _sellOrders;
@@ -80,7 +81,7 @@ namespace MarketplaceOrderSystem
         internal void CancelOrder(long orderID)
         {
             var order = _allOrders[orderID];
-            if(order.OrderType == MarketOrderType.Buy)
+            if (order.OrderType == MarketOrderType.Buy)
             {
                 order.Owner.AddMoney(order.Price * order.Quantity);
                 order.Owner.FillOrder(orderID);
@@ -113,93 +114,6 @@ namespace MarketplaceOrderSystem
             sellOrder.Owner.FillOrder(sellOrder.ID);
         }
 
-        //        public void AddBuyOrder(MarketplaceOrderSystem.Market
-        //Order buyOrder)
-        //        {
-        //            MarketOrder order = new MarketOrder(buyOrder);
-        //            if (!_buyOrders.ContainsKey(order.ItemName))
-        //            {
-        //                _buyOrders.Add(order.ItemName, new SortedSet<MarketOrder>(new MarketOrder.BuyOrderComparer()));
-        //            }
-        //            _buyOrders[order.ItemName].Add(order);
-        //            MatchBuyOrder(order);
-        //        }
-
-        //private void MatchBuyOrder(MarketOrder buyOrder)
-        //{
-        //    if (!_sellOrders.ContainsKey(buyOrder.ItemName))
-        //    {
-        //        return;
-        //    }
-        //    var toRemove = new List<MarketOrder>();
-        //    foreach (var sellOrder in _sellOrders[buyOrder.ItemName])
-        //    {
-        //        if (sellOrder.Price <= buyOrder.Price)
-        //        {
-        //            int tradeQuantity = Math.Min(buyOrder.Quantity, sellOrder.Quantity);
-        //            sellOrder.FillOrder(tradeQuantity);
-        //            buyOrder.FillOrder(tradeQuantity);
-        //            if (sellOrder.Quantity == 0)
-        //            {
-        //                toRemove.Add(sellOrder);
-        //            }
-        //            if (buyOrder.Quantity == 0)
-        //            {
-        //                _buyOrders[buyOrder.ItemName].Remove(buyOrder);
-        //                break;
-        //            }
-        //        }
-        //    }
-        //    foreach (var filledOrder in toRemove)
-        //    {
-        //        _sellOrders[buyOrder.ItemName].Remove(filledOrder);
-        //    }
-        //    if (_sellOrders[buyOrder.ItemName].Count == 0) _sellOrders.Remove(buyOrder.ItemName);
-        //}
-
-        //public void AddSellOrder(MarketplaceOrderSystem.MarketOrder sellOrder)
-        //{
-        //    MarketOrder order = new MarketOrder(sellOrder);
-        //    if (!_sellOrders.ContainsKey(order.ItemName))
-        //    {
-        //        _sellOrders.Add(order.ItemName, new SortedSet<MarketOrder>(new MarketOrder.SellOrderComparer()));
-        //    }
-        //    _sellOrders[order.ItemName].Add(order);
-        //    MatchSellOrder(order);
-        //}
-
-        //private void MatchSellOrder(MarketOrder sellOrder)
-        //{
-        //    if (!_buyOrders.ContainsKey(sellOrder.ItemName))
-        //    {
-        //        return;
-        //    }
-        //    var toRemove = new List<MarketOrder>();
-        //    foreach (var buyOrder in _buyOrders[sellOrder.ItemName])
-        //    {
-        //        if (sellOrder.Price <= buyOrder.Price)
-        //        {
-        //            int tradeQuantity = Math.Min(sellOrder.Quantity, buyOrder.Quantity);
-        //            sellOrder.FillOrder(tradeQuantity);
-        //            buyOrder.FillOrder(tradeQuantity);
-        //            if (buyOrder.Quantity == 0)
-        //            {
-        //                toRemove.Add(buyOrder);
-        //            }
-        //            if (sellOrder.Quantity == 0)
-        //            {
-        //                _sellOrders[sellOrder.ItemName].Remove(sellOrder);
-        //                break;
-        //            }
-        //        }
-        //    }
-        //    foreach (var filledOrder in toRemove)
-        //    {
-        //        _buyOrders[sellOrder.ItemName].Remove(filledOrder);
-        //    }
-        //    if (_buyOrders[sellOrder.ItemName].Count == 0) _buyOrders.Remove(sellOrder.ItemName);
-        //}
-
         public List<MarketplaceOrderSystem.MarketOrder> GetOrders(string item, MarketOrderType orderType)
         {
             var orderBook = orderType == MarketOrderType.Buy ? _buyOrders : _sellOrders;
@@ -213,18 +127,7 @@ namespace MarketplaceOrderSystem
             }
             return orders;
         }
-        public List<MarketplaceOrderSystem.MarketOrder> GetSellOrders(string item)
-        {
-            List<MarketplaceOrderSystem.MarketOrder> orders = new List<MarketplaceOrderSystem.MarketOrder>();
-            if (_sellOrders.ContainsKey(item))
-            {
-                foreach (var marketOrder in _sellOrders[item])
-                {
-                    orders.Add(new MarketplaceOrderSystem.MarketOrder(marketOrder.OrderType, marketOrder.ItemName, marketOrder.Quantity, marketOrder.Price));
-                }
-            }
-            return orders;
-        }
+
 
         private class MarketOrder
         {
@@ -236,17 +139,16 @@ namespace MarketplaceOrderSystem
             public long Timestamp { get; }
             public long ID { get; }
 
-            public MarketOrder(MarketOrderType orderType, string itemName, int quantity, int price, MarketPlayer player)
+            public MarketOrder(MarketplaceOrderSystem.MarketOrder order, MarketPlayer player)
             {
-                OrderType = orderType;
-                ItemName = itemName;
-                Quantity = quantity;
-                Price = price;
+                OrderType = order.OrderType;
+                ItemName = order.ItemName;
+                Quantity = order.Quantity;
+                Price = order.Price;
                 Owner = player;
                 Timestamp = DateTime.UtcNow.Ticks;
                 ID = Generate.ID();
             }
-            public MarketOrder(MarketplaceOrderSystem.MarketOrder order, MarketPlayer player) : this(order.OrderType, order.ItemName, order.Quantity, order.Price, player) { }
             public class SellOrderComparer : IComparer<MarketOrder>
             {
                 public int Compare(MarketOrder? x, MarketOrder? y)
